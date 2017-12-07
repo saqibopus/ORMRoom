@@ -156,7 +156,9 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onSubscribe(Disposable d) {
                         System.out.println("----**onSubscribe");
+
                     }
+
 
                     @Override
                     public void onSuccess(UserInfo userInfo) {
