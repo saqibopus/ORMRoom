@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.example.emxcel.ormroom.RoomBasic.DBOperation.CRUDUser;
 import com.example.emxcel.ormroom.RoomBasic.Database.DB;
 import com.example.emxcel.ormroom.RoomBasic.Tables.UserInfo;
 
@@ -35,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private DB appDatabase;
     private Button bt_get_users;
     private TextView tv_user_info;
-
+    private CRUDUser crudUser;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,10 +45,8 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         appDatabase = Room.databaseBuilder(this, DB.class, DB.DB_NAME)
                 .allowMainThreadQueries().build();
-
-        bt_get_users = (Button) findViewById(R.id.bt_get_users);
-        tv_user_info = (TextView) findViewById(R.id.tv_user_info);
-        saveNote();
+        initUI();
+        initClass();
         bt_get_users.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -62,8 +61,21 @@ public class MainActivity extends AppCompatActivity {
         //insertSingleRx();
 
 
-    }
+        UserInfo user = new UserInfo();
+        user.setName("New 07-12-2017");
+        user.setAge(18);
+        user.setPremium(true);
+        crudUser.insertUser(user);
 
+
+    }
+    private void initUI(){
+        bt_get_users = (Button) findViewById(R.id.bt_get_users);
+        tv_user_info = (TextView) findViewById(R.id.tv_user_info);
+    }
+    private void initClass(){
+        crudUser = new CRUDUser(MainActivity.this);
+    }
     @Override
     protected void onResume() {
         super.onResume();
