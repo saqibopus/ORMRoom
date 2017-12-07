@@ -1,13 +1,22 @@
 package com.example.emxcel.ormroom;
 
+import android.app.Activity;
+import android.app.IntentService;
 import android.arch.persistence.room.InvalidationTracker;
 import android.arch.persistence.room.Room;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.Checkable;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.example.emxcel.ormroom.RoomBasic.DBOperation.CRUDUser;
@@ -36,7 +45,9 @@ public class MainActivity extends AppCompatActivity {
     private DB appDatabase;
     private Button bt_get_users;
     private TextView tv_user_info;
+    private FloatingActionButton fabAddUser;
     private CRUDUser crudUser;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,35 +58,34 @@ public class MainActivity extends AppCompatActivity {
                 .allowMainThreadQueries().build();
         initUI();
         initClass();
-        bt_get_users.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                loadUsers();
-                //getAllUerDataRX();
-                //getUserSingleRx();
-                //getUserById();
-                //dummy();
-                //insert();
-            }
-        });
+
+        //loadUsers();
+        //getAllUerDataRX();
+        //getUserSingleRx();
+        //getUserById();
+        //dummy();
+        //insert();
+
         //insertSingleRx();
 
-
-        UserInfo user = new UserInfo();
-        user.setName("New 07-12-2017");
-        user.setAge(18);
-        user.setPremium(true);
-        crudUser.insertUser(user);
+        fabAddUser.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                alertWithCustomLayout(MainActivity.this, "Enter User Detail").show();
+            }
+        });
 
 
     }
-    private void initUI(){
-        bt_get_users = (Button) findViewById(R.id.bt_get_users);
-        tv_user_info = (TextView) findViewById(R.id.tv_user_info);
+
+    private void initUI() {
+        fabAddUser = (FloatingActionButton) findViewById(R.id.fab_add_user);
     }
-    private void initClass(){
+
+    private void initClass() {
         crudUser = new CRUDUser(MainActivity.this);
     }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -180,9 +190,9 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onError(Throwable e) {
                         System.out.println("----**onError");
-                        System.out.println("----**onError"+e.getLocalizedMessage());
-                        System.out.println("----**onError"+e.getCause());
-                        System.out.println("----**onError"+e.getStackTrace());
+                        System.out.println("----**onError" + e.getLocalizedMessage());
+                        System.out.println("----**onError" + e.getCause());
+                        System.out.println("----**onError" + e.getStackTrace());
                     }
                 });
 
@@ -194,6 +204,7 @@ public class MainActivity extends AppCompatActivity {
 
         new AsyncTask<Void, Void, Void>() {
             UserInfo userFromDb = null;
+
             @Override
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
@@ -202,10 +213,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             protected Void doInBackground(Void... voids) {
-                if(userFromDb!=null){
-                    System.out.println("----**id : "+userFromDb.getId());
-                    System.out.println("----**name : "+userFromDb.getName());
-                    System.out.println("----**age : "+userFromDb.getAge());
+                if (userFromDb != null) {
+                    System.out.println("----**id : " + userFromDb.getId());
+                    System.out.println("----**name : " + userFromDb.getName());
+                    System.out.println("----**age : " + userFromDb.getAge());
                 }
 
                 return null;
@@ -216,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
         System.out.println("----**getUserById(end)");
     }
 
-    private void dummy(){
+    private void dummy() {
         final UserInfo user = new UserInfo();
         user.setName("single_callable");
         user.setAge(75);
@@ -230,6 +241,44 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private AlertDialog alertWithCustomLayout(Activity activity, String title) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        // Get the layout inflater
+        LayoutInflater inflater = activity.getLayoutInflater();
+        View view = inflater.inflate(R.layout.layout_add_user, null);
+        final EditText userName = (EditText) view.findViewById(R.id.etUserName);
+        final EditText userAge = (EditText) view.findViewById(R.id.etUserAge);
+        final CheckBox checkBox = (CheckBox) view.findViewById(R.id.checkboxPremium);
+
+
+        builder.setView(view)
+                .setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                        if (userName.getText().toString().equals("")) {
+                            userName.setError("Enter Name");
+                            return;
+                        }
+                        if (userAge.getText().toString().equals("")) {
+                            userAge.setError("Enter Age");
+                            return;
+                        }
+
+                        UserInfo user = new UserInfo();
+                        user.setName(userName.getText().toString());
+                        user.setAge(Integer.parseInt(userAge.getText().toString()));
+                        user.setPremium(checkBox.isChecked());
+                        crudUser.insertUser(user);
+
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+
+                    }
+                });
+        return builder.create();
+    }
 
 
 }

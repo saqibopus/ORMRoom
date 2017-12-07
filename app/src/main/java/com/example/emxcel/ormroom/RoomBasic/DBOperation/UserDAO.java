@@ -18,7 +18,7 @@ import io.reactivex.Single;
 public interface UserDAO {
 
     @Insert
-    void insertUser(UserInfo userInfo);
+    long insertUser(UserInfo userInfo);
 
     @Update
     void updateAll(UserInfo userInfo);
