@@ -1,13 +1,15 @@
 package com.example.emxcel.ormroom.RoomBasic.DBOperation;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.arch.persistence.room.Room;
 import android.os.AsyncTask;
 
 import com.example.emxcel.ormroom.RoomBasic.AppHelper.ProgressHelper;
 import com.example.emxcel.ormroom.RoomBasic.Database.DB;
 import com.example.emxcel.ormroom.RoomBasic.Tables.UserInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by emxcel on 7/12/17.
@@ -18,18 +20,31 @@ public class CRUDUser {
     private DB appDatabase;
     private Activity activity;
     private ProgressHelper progressHelper;
-
-    public CRUDUser(Activity activity) {
+    public interface CRUDOperationListner {
+        void onInsert(String message,long id);
+        void onUpdateName(String message,int id);
+        void onGetAllUser(String message,List<UserInfo> userInfos);
+    }
+    private CRUDOperationListner crudOperationListner;
+    public CRUDUser(Activity activity,CRUDOperationListner crudOperationListner) {
         this.activity = activity;
+        this.crudOperationListner=crudOperationListner;
         appDatabase = Room.databaseBuilder(activity, DB.class, DB.DB_NAME)
                 .allowMainThreadQueries().build();
         progressHelper = ProgressHelper.getInstance();
         progressHelper.initProgressDilog(activity);
     }
 
-    public void insertUser(UserInfo user){
+    public void insertUser(final UserInfo user){
 
-        new AsyncTask<UserInfo, Void, Void>() {
+        new AsyncTask<Void, Void, Void>() {
+            long id = -1;
+            @Override
+            protected Void doInBackground(Void... voids) {
+                id = appDatabase.getUserInfoDao().insertUser(user);
+                return null;
+            }
+
             @Override
             protected void onPreExecute() {
                 super.onPreExecute();
@@ -37,17 +52,106 @@ public class CRUDUser {
             }
 
             @Override
-            protected Void doInBackground(UserInfo... userInfos) {
-                appDatabase.getUserInfoDao().insertUser(userInfos[0]);
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                crudOperationListner.onInsert("message",id);
+                progressHelper.dissmiss();
+            }
+        }.execute();
+    }
+    public void getUsers() {
+        new AsyncTask<Void, Void, Void>() {
+            List<UserInfo> users = new ArrayList<>();
+            @Override
+            protected Void doInBackground(Void... params) {
+                users = appDatabase.getUserInfoDao().getAllUser();
                 return null;
+            }
+
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                progressHelper.show("Getting User");
+            }
+
+            @Override
+            protected void onPostExecute(Void notes) {
+                crudOperationListner.onGetAllUser("User List Success",users);
+                progressHelper.dissmiss();
+
+            }
+        }.execute();
+    }
+    public void updateUserName(final String  old_user_name, final String new_user_name){
+
+        new AsyncTask<Void, Void, Void>() {
+            int id = 00;
+            @Override
+            protected Void doInBackground(Void... voids) {
+                id = appDatabase.getUserInfoDao().updateUserName(old_user_name,new_user_name);
+                return null;
+            }
+
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                progressHelper.show("Updating User");
             }
 
             @Override
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
+                crudOperationListner.onUpdateName("message",id);
                 progressHelper.dissmiss();
             }
-        }.execute(user);
+        }.execute();
     }
+    public void updateUser(long id, final String new_user_name, final int new_user_age, final boolean new_user_isPremium){
 
+        new AsyncTask<Void, Void, Void>() {
+            int id = 00;
+            @Override
+            protected Void doInBackground(Void... voids) {
+                id = appDatabase.getUserInfoDao().updateUser(id,new_user_name,new_user_age,new_user_isPremium);
+                return null;
+            }
+
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                progressHelper.show("Updating User");
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                crudOperationListner.onUpdateName("message",id);
+                progressHelper.dissmiss();
+            }
+        }.execute();
+    }
+    public void updateUserFull(long id, final UserInfo userInfo){
+
+        new AsyncTask<Void, Void, Void>() {
+            int id = 00;
+            @Override
+            protected Void doInBackground(Void... voids) {
+                id = appDatabase.getUserInfoDao().updateUserFull(id,userInfo.getName());
+                return null;
+            }
+
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                progressHelper.show("Updating User");
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                crudOperationListner.onUpdateName("message",id);
+                progressHelper.dissmiss();
+            }
+        }.execute();
+    }
 }

@@ -9,16 +9,22 @@ import com.example.emxcel.ormroom.RoomBasic.Tables.UserInfo;
 
 import java.util.List;
 
-import io.reactivex.Single;
 
-/**
- * Created by emxcel on 4/12/17.
- */
 @Dao
 public interface UserDAO {
 
     @Insert
     long insertUser(UserInfo userInfo);
+
+    @Query("UPDATE user_info SET name = :new_user_name WHERE name = :old_user_name")
+    int updateUserName(String  old_user_name,String new_user_name);
+
+    @Query("UPDATE user_info SET name = :new_user_name, age = :new_user_age, isPremium = :new_user_isPremium WHERE id = :id")
+    int updateUser(long id,String new_user_name,int new_user_age,
+                   boolean new_user_isPremium);
+
+    @Query("UPDATE user_info SET name = :new_user_name WHERE id = :id")
+    int updateUserFull(long id,String new_user_name);
 
     @Update
     void updateAll(UserInfo userInfo);

@@ -1,39 +1,36 @@
 package com.example.emxcel.ormroom;
 
 import android.app.Activity;
-import android.app.IntentService;
-import android.arch.persistence.room.InvalidationTracker;
 import android.arch.persistence.room.Room;
-import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.Checkable;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.example.emxcel.ormroom.RoomBasic.Adapters.UserListAdapter;
+import com.example.emxcel.ormroom.RoomBasic.AppHelper.LogHelper;
+import com.example.emxcel.ormroom.RoomBasic.AppHelper.RecyclerTouchListener;
 import com.example.emxcel.ormroom.RoomBasic.DBOperation.CRUDUser;
 import com.example.emxcel.ormroom.RoomBasic.Database.DB;
 import com.example.emxcel.ormroom.RoomBasic.Tables.UserInfo;
-
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.concurrent.Callable;
 
-import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.reactivex.SingleObserver;
@@ -41,12 +38,18 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOperationListner {
     private DB appDatabase;
     private Button bt_get_users;
     private TextView tv_user_info;
     private FloatingActionButton fabAddUser;
     private CRUDUser crudUser;
+    private RecyclerView recyclerView;
+    private List<UserInfo> allUserData;
+    private UserListAdapter userListAdapter;
+    private LogHelper logHelper;
+    private AlertDialog addDilog;
+    private AlertDialog updateDilog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,31 +62,45 @@ public class MainActivity extends AppCompatActivity {
         initUI();
         initClass();
 
-        //loadUsers();
-        //getAllUerDataRX();
-        //getUserSingleRx();
-        //getUserById();
-        //dummy();
-        //insert();
-
-        //insertSingleRx();
-
         fabAddUser.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                alertWithCustomLayout(MainActivity.this, "Enter User Detail").show();
+                addDilog.show();
             }
         });
-
-
+        crudUser.getUsers();
     }
 
     private void initUI() {
         fabAddUser = (FloatingActionButton) findViewById(R.id.fab_add_user);
+        recyclerView = (RecyclerView) findViewById(R.id.recycler_view_user_list);
     }
 
     private void initClass() {
-        crudUser = new CRUDUser(MainActivity.this);
+        logHelper = new LogHelper(MainActivity.this, true);
+        crudUser = new CRUDUser(MainActivity.this, this);
+        addDilog = alertWithCustomLayout(MainActivity.this, "User Info");
+    }
+
+    private void prepareListData() {
+        userListAdapter = new UserListAdapter(MainActivity.this, allUserData);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(MainActivity.this);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setAdapter(userListAdapter);
+        recyclerView.addOnItemTouchListener(new RecyclerTouchListener(getApplicationContext(), recyclerView, new RecyclerTouchListener.ClickListener() {
+            @Override
+            public void onClick(View view, int position) {
+                UserInfo info = allUserData.get(position);
+                logHelper.p("id :"+info.getId());
+                updateDilog = alertWithCustomLayout(MainActivity.this, info);
+                updateDilog.show();
+            }
+
+            @Override
+            public void onLongClick(View view, int position) {
+
+            }
+        }));
     }
 
     @Override
@@ -115,27 +132,6 @@ public class MainActivity extends AppCompatActivity {
         }.execute();
     }
 
-    private void saveNote() {
-        UserInfo user = new UserInfo();
-        user.setName("update");
-        user.setAge(18);
-        user.setPremium(true);
-
-        new AsyncTask<UserInfo, Void, Void>() {
-
-            @Override
-            protected Void doInBackground(UserInfo... userInfos) {
-                appDatabase.getUserInfoDao().insertUser(userInfos[0]);
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                super.onPostExecute(aVoid);
-            }
-        }.execute(user);
-    }
-
 
     private void getAllUerDataRX() {
         Flowable<List<UserInfo>> data = appDatabase.getUserInfoDaoRX().getAllUser();
@@ -145,15 +141,15 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new Subscriber<List<UserInfo>>() {
                     @Override
                     public void onSubscribe(Subscription s) {
-                        System.out.println("----**onSubscribe");
-                        System.out.println("----**onSubscribe " + s.toString());
+                        logHelper.p("----**onSubscribe");
+                        logHelper.p("----**onSubscribe " + s.toString());
 
                     }
 
                     @Override
                     public void onNext(List<UserInfo> userInfos) {
-                        System.out.println("----**onNext");
-                        System.out.println("----**User info : " + userInfos.size());
+                        logHelper.p("----**onNext");
+                        logHelper.p("----**User info : " + userInfos.size());
                     }
 
                     @Override
@@ -170,37 +166,37 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getUserSingleRx() {
-        System.out.println("----**getUserSingleRx(start)");
+        logHelper.p("----**getUserSingleRx(start)");
         Single<UserInfo> userData = appDatabase.getUserInfoDaoRX().getUserById(3);
         userData.observeOn(Schedulers.newThread())
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .subscribe(new SingleObserver<UserInfo>() {
                     @Override
                     public void onSubscribe(Disposable d) {
-                        System.out.println("----**onSubscribe");
+                        logHelper.p("----**onSubscribe");
 
                     }
 
 
                     @Override
                     public void onSuccess(UserInfo userInfo) {
-                        System.out.println("----**onSuccess");
+                        logHelper.p("----**onSuccess");
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        System.out.println("----**onError");
-                        System.out.println("----**onError" + e.getLocalizedMessage());
-                        System.out.println("----**onError" + e.getCause());
-                        System.out.println("----**onError" + e.getStackTrace());
+                        logHelper.p("----**onError");
+                        logHelper.p("----**onError" + e.getLocalizedMessage());
+                        logHelper.p("----**onError" + e.getCause());
+                        logHelper.p("----**onError" + e.getStackTrace());
                     }
                 });
 
-        System.out.println("----**getUserSingleRx(end)");
+        logHelper.p("----**getUserSingleRx(end)");
     }
 
     private void getUserById() {
-        System.out.println("----**getUserById(start)");
+        logHelper.p("----**getUserById(start)");
 
         new AsyncTask<Void, Void, Void>() {
             UserInfo userFromDb = null;
@@ -214,9 +210,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             protected Void doInBackground(Void... voids) {
                 if (userFromDb != null) {
-                    System.out.println("----**id : " + userFromDb.getId());
-                    System.out.println("----**name : " + userFromDb.getName());
-                    System.out.println("----**age : " + userFromDb.getAge());
+                    logHelper.p("----**id : " + userFromDb.getId());
+                    logHelper.p("----**name : " + userFromDb.getName());
+                    logHelper.p("----**age : " + userFromDb.getAge());
                 }
 
                 return null;
@@ -224,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }.execute();
 
-        System.out.println("----**getUserById(end)");
+        logHelper.p("----**getUserById(end)");
     }
 
     private void dummy() {
@@ -242,43 +238,127 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private AlertDialog alertWithCustomLayout(Activity activity, String title) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-        // Get the layout inflater
+        final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         LayoutInflater inflater = activity.getLayoutInflater();
         View view = inflater.inflate(R.layout.layout_add_user, null);
+
         final EditText userName = (EditText) view.findViewById(R.id.etUserName);
         final EditText userAge = (EditText) view.findViewById(R.id.etUserAge);
         final CheckBox checkBox = (CheckBox) view.findViewById(R.id.checkboxPremium);
+        final Button btOk = (Button) view.findViewById(R.id.bt_ok);
+        final Button btCancel = (Button) view.findViewById(R.id.bt_cancel);
 
+        btOk.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (userName.getText().toString().equals("")) {
+                    userName.setError("Enter Name");
+                    return;
+                }
+                if (userAge.getText().toString().equals("")) {
+                    userAge.setError("Enter Age");
+                    return;
+                }
 
-        builder.setView(view)
-                .setPositiveButton("Add", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        if (userName.getText().toString().equals("")) {
-                            userName.setError("Enter Name");
-                            return;
-                        }
-                        if (userAge.getText().toString().equals("")) {
-                            userAge.setError("Enter Age");
-                            return;
-                        }
+                UserInfo user = new UserInfo();
+                user.setName(userName.getText().toString());
+                user.setAge(Integer.parseInt(userAge.getText().toString()));
+                user.setPremium(checkBox.isChecked());
+                crudUser.insertUser(user);
+                if (addDilog != null && addDilog.isShowing()) {
+                    addDilog.dismiss();
+                }
+            }
+        });
+        btCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (addDilog != null && addDilog.isShowing()) {
+                    addDilog.dismiss();
+                }
+            }
+        });
+        builder.setView(view);
+        return builder.create();
+    }
 
-                        UserInfo user = new UserInfo();
-                        user.setName(userName.getText().toString());
-                        user.setAge(Integer.parseInt(userAge.getText().toString()));
-                        user.setPremium(checkBox.isChecked());
-                        crudUser.insertUser(user);
+    private AlertDialog alertWithCustomLayout(Activity activity, final UserInfo userInfo) {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        LayoutInflater inflater = activity.getLayoutInflater();
+        View view = inflater.inflate(R.layout.layout_add_user, null);
 
-                    }
-                })
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
+        final EditText userName = (EditText) view.findViewById(R.id.etUserName);
+        final EditText userAge = (EditText) view.findViewById(R.id.etUserAge);
+        final CheckBox checkBox = (CheckBox) view.findViewById(R.id.checkboxPremium);
+        final Button btOk = (Button) view.findViewById(R.id.bt_ok);
+        final Button btCancel = (Button) view.findViewById(R.id.bt_cancel);
+        userName.setText(userInfo.getName());
+        userAge.setText(String.valueOf(userInfo.getAge()));
+        if (userInfo.isPremium()) {
+            checkBox.setChecked(userInfo.isPremium());
+        }
 
-                    }
-                });
+        btOk.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (userName.getText().toString().equals("")) {
+                    userName.setError("Enter Name");
+                    return;
+                }
+                if (userAge.getText().toString().equals("")) {
+                    userAge.setError("Enter Age");
+                    return;
+                }
+                /*crudUser.updateUser(userInfo.getId(), userName.getText().toString(), Integer.parseInt(userAge.getText().toString()),
+                        checkBox.isChecked());*/
+                UserInfo user = new UserInfo();
+                user.setName(userName.getText().toString());
+                user.setAge(Integer.parseInt(userAge.getText().toString()));
+                user.setPremium(checkBox.isChecked());
+
+                crudUser.updateUserFull(userInfo.getId(), user);
+
+                if (updateDilog != null && updateDilog.isShowing()) {
+                    updateDilog.dismiss();
+                }
+            }
+        });
+        btCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (updateDilog != null && updateDilog.isShowing()) {
+                    updateDilog.dismiss();
+                }
+            }
+        });
+        builder.setView(view);
         return builder.create();
     }
 
 
+    @Override
+    public void onInsert(String message, long id) {
+        logHelper.p("----**onInsert(start)");
+        logHelper.p("----**onInsert id : " + id);
+        if (id == -1) {
+
+        }
+        logHelper.p("----**onInsert(end)");
+    }
+
+    @Override
+    public void onUpdateName(String message, int id) {
+        logHelper.p("----**onUpdateName(start)");
+        logHelper.p("----**onUpdateName id: " + id);
+        logHelper.p("----**onUpdateName(end)");
+    }
+
+    @Override
+    public void onGetAllUser(String message, List<UserInfo> userInfos) {
+        logHelper.p("----**onGetAllUser(start)");
+        allUserData = userInfos;
+        prepareListData();
+        //crudUser.updateUserName("update", "new_update");
+        logHelper.p("----**onGetAllUser(end)");
+    }
 }

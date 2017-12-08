@@ -10,14 +10,11 @@
     tools:showIn="@layout/activity_main">
 
 
-
-    <LinearLayout
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recycler_view_user_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-    </LinearLayout>
-
+        android:scrollbars="vertical" />
 
 
 </LinearLayout>
