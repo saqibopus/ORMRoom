@@ -74,19 +74,8 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
     private void initUI() {
         fabAddUser = (FloatingActionButton) findViewById(R.id.fab_add_user);
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view_user_list);
-    }
-
-    private void initClass() {
-        logHelper = new LogHelper(MainActivity.this, true);
-        crudUser = new CRUDUser(MainActivity.this, this);
-        addDilog = alertWithCustomLayout(MainActivity.this, "User Info");
-    }
-
-    private void prepareListData() {
-        userListAdapter = new UserListAdapter(MainActivity.this, allUserData);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(MainActivity.this);
         recyclerView.setLayoutManager(layoutManager);
-        recyclerView.setAdapter(userListAdapter);
         recyclerView.addOnItemTouchListener(new RecyclerTouchListener(getApplicationContext(), recyclerView, new RecyclerTouchListener.ClickListener() {
             @Override
             public void onClick(View view, int position) {
@@ -103,11 +92,21 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         }));
     }
 
+    private void initClass() {
+        logHelper = new LogHelper(MainActivity.this, true);
+        crudUser = new CRUDUser(MainActivity.this, this);
+        addDilog = alertWithCustomLayout(MainActivity.this, "User Info");
+    }
+
+    private void prepareListData() {
+        userListAdapter = new UserListAdapter(MainActivity.this, allUserData);
+        recyclerView.setAdapter(userListAdapter);
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
     }
-
 
     private void loadUsers() {
         new AsyncTask<Void, Void, Void>() {
@@ -131,7 +130,6 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
             }
         }.execute();
     }
-
 
     private void getAllUerDataRX() {
         Flowable<List<UserInfo>> data = appDatabase.getUserInfoDaoRX().getAllUser();
@@ -297,7 +295,10 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         if (userInfo.isPremium()) {
             checkBox.setChecked(userInfo.isPremium());
         }
-
+        logHelper.p("id : "+userInfo.getId());
+        logHelper.p("name : "+userInfo.getName());
+        logHelper.p("age : "+userInfo.getAge());
+        logHelper.p("premium : "+userInfo.isPremium());
         btOk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -309,14 +310,13 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
                     userAge.setError("Enter Age");
                     return;
                 }
-                /*crudUser.updateUser(userInfo.getId(), userName.getText().toString(), Integer.parseInt(userAge.getText().toString()),
-                        checkBox.isChecked());*/
                 UserInfo user = new UserInfo();
+                user.setId(userInfo.getId());
                 user.setName(userName.getText().toString());
                 user.setAge(Integer.parseInt(userAge.getText().toString()));
                 user.setPremium(checkBox.isChecked());
 
-                crudUser.updateUserFull(userInfo.getId(), user);
+                crudUser.updateUser(user);
 
                 if (updateDilog != null && updateDilog.isShowing()) {
                     updateDilog.dismiss();
@@ -335,7 +335,6 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         return builder.create();
     }
 
-
     @Override
     public void onInsert(String message, long id) {
         logHelper.p("----**onInsert(start)");
@@ -350,6 +349,9 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
     public void onUpdateName(String message, int id) {
         logHelper.p("----**onUpdateName(start)");
         logHelper.p("----**onUpdateName id: " + id);
+        if(id>=1){
+            crudUser.getUsers();
+        }
         logHelper.p("----**onUpdateName(end)");
     }
 
@@ -358,7 +360,6 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         logHelper.p("----**onGetAllUser(start)");
         allUserData = userInfos;
         prepareListData();
-        //crudUser.updateUserName("update", "new_update");
         logHelper.p("----**onGetAllUser(end)");
     }
 }
