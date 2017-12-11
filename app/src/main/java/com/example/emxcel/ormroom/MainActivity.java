@@ -1,7 +1,10 @@
 package com.example.emxcel.ormroom;
 
 import android.app.Activity;
+import android.app.SearchManager;
 import android.arch.persistence.room.Room;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -9,8 +12,11 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -80,14 +86,15 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
             @Override
             public void onClick(View view, int position) {
                 UserInfo info = allUserData.get(position);
-                logHelper.p("id :"+info.getId());
+                logHelper.p("id :" + info.getId());
                 updateDilog = alertWithCustomLayout(MainActivity.this, info);
                 updateDilog.show();
             }
 
             @Override
             public void onLongClick(View view, int position) {
-
+                UserInfo info = allUserData.get(position);
+                simpleAlert(MainActivity.this,"Are you sure you want to delete?",info).show();
             }
         }));
     }
@@ -102,7 +109,44 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         userListAdapter = new UserListAdapter(MainActivity.this, allUserData);
         recyclerView.setAdapter(userListAdapter);
     }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
 
+        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        SearchView searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
+        searchView.setSearchableInfo( searchManager.getSearchableInfo(getComponentName()) );
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return true; // handled
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+
+                userListAdapter.getFilter().filter(newText);
+
+                return true;
+            }
+        });
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        if (id == R.id.action_search) {
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
     @Override
     protected void onResume() {
         super.onResume();
@@ -295,13 +339,17 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         if (userInfo.isPremium()) {
             checkBox.setChecked(userInfo.isPremium());
         }
-        logHelper.p("id : "+userInfo.getId());
-        logHelper.p("name : "+userInfo.getName());
-        logHelper.p("age : "+userInfo.getAge());
-        logHelper.p("premium : "+userInfo.isPremium());
+        logHelper.p("id : " + userInfo.getId());
+        logHelper.p("name : " + userInfo.getName());
+        logHelper.p("age : " + userInfo.getAge());
+        logHelper.p("premium : " + userInfo.isPremium());
+
+
         btOk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+
                 if (userName.getText().toString().equals("")) {
                     userName.setError("Enter Name");
                     return;
@@ -316,7 +364,12 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
                 user.setAge(Integer.parseInt(userAge.getText().toString()));
                 user.setPremium(checkBox.isChecked());
 
+                /* Following code will update user by id */
                 crudUser.updateUser(user);
+
+                 /* Following code will change all the records of name and age */
+                //crudUser.updateUserNameAge(user.getName(), user.getAge(),user.getId());
+                //crudUser.updateUserName("saqib123","saqib_test");
 
                 if (updateDilog != null && updateDilog.isShowing()) {
                     updateDilog.dismiss();
@@ -340,20 +393,22 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         logHelper.p("----**onInsert(start)");
         logHelper.p("----**onInsert id : " + id);
         if (id == -1) {
-
+            return;
         }
+        crudUser.getUsers();
         logHelper.p("----**onInsert(end)");
     }
 
     @Override
-    public void onUpdateName(String message, int id) {
+    public void onUpdateUser(String message, int id) {
         logHelper.p("----**onUpdateName(start)");
         logHelper.p("----**onUpdateName id: " + id);
-        if(id>=1){
+        if (id >= 1) {
             crudUser.getUsers();
         }
         logHelper.p("----**onUpdateName(end)");
     }
+
 
     @Override
     public void onGetAllUser(String message, List<UserInfo> userInfos) {
@@ -362,4 +417,24 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         prepareListData();
         logHelper.p("----**onGetAllUser(end)");
     }
+
+
+    private AlertDialog simpleAlert(Activity activity, String message, final UserInfo userInfo) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        builder.setMessage(message)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+
+                        crudUser.deleteUser(userInfo);
+
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+
+                    }
+                });
+        return builder.create();
+    }
+
 }

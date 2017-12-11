@@ -22,7 +22,7 @@ public class CRUDUser {
     private ProgressHelper progressHelper;
     public interface CRUDOperationListner {
         void onInsert(String message,long id);
-        void onUpdateName(String message,int id);
+        void onUpdateUser(String message,int id);
         void onGetAllUser(String message,List<UserInfo> userInfos);
     }
     private CRUDOperationListner crudOperationListner;
@@ -82,13 +82,15 @@ public class CRUDUser {
             }
         }.execute();
     }
-    public void updateUserName(final String  old_user_name, final String new_user_name){
+
+
+    public void updateUser(final UserInfo userInfo){
 
         new AsyncTask<Void, Void, Void>() {
             int id = 00;
             @Override
             protected Void doInBackground(Void... voids) {
-                id = appDatabase.getUserInfoDao().updateUserName(old_user_name,new_user_name);
+                id = appDatabase.getUserInfoDao().updateUserFull(userInfo);
                 return null;
             }
 
@@ -101,18 +103,20 @@ public class CRUDUser {
             @Override
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
-                crudOperationListner.onUpdateName("message",id);
+                crudOperationListner.onUpdateUser("message",id);
                 progressHelper.dissmiss();
             }
         }.execute();
     }
-    public void updateUser(long id, final String new_user_name, final int new_user_age, final boolean new_user_isPremium){
+    /**
+     * Following code will change all the records of name and age */
+    public void updateUserNameAge(final String name, final int age,final long user_id){
 
         new AsyncTask<Void, Void, Void>() {
             int id = 00;
             @Override
             protected Void doInBackground(Void... voids) {
-                id = appDatabase.getUserInfoDao().updateUser(id,new_user_name,new_user_age,new_user_isPremium);
+                id = appDatabase.getUserInfoDao().updateUserNameAge(name,age,user_id);
                 return null;
             }
 
@@ -125,18 +129,18 @@ public class CRUDUser {
             @Override
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
-                crudOperationListner.onUpdateName("message",id);
+                crudOperationListner.onUpdateUser("message",id);
                 progressHelper.dissmiss();
             }
         }.execute();
     }
-    public void updateUserFull(long id, final UserInfo userInfo){
+    public void updateUserName(final String old_name, final String new_name){
 
         new AsyncTask<Void, Void, Void>() {
             int id = 00;
             @Override
             protected Void doInBackground(Void... voids) {
-                id = appDatabase.getUserInfoDao().updateUserFull(id,userInfo.getName());
+                id = appDatabase.getUserInfoDao().updateUserName(old_name,new_name);
                 return null;
             }
 
@@ -149,7 +153,32 @@ public class CRUDUser {
             @Override
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
-                crudOperationListner.onUpdateName("message",id);
+                crudOperationListner.onUpdateUser("message",id);
+                progressHelper.dissmiss();
+            }
+        }.execute();
+    }
+
+    public void deleteUser(final UserInfo userInfo){
+
+        new AsyncTask<Void, Void, Void>() {
+            int _id = 00;
+            @Override
+            protected Void doInBackground(Void... voids) {
+                _id = appDatabase.getUserInfoDao().deleteUsers(userInfo);
+                return null;
+            }
+
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                progressHelper.show("Updating User");
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                crudOperationListner.onUpdateUser("message",_id);
                 progressHelper.dissmiss();
             }
         }.execute();

@@ -49,8 +49,8 @@ public class UserInfo {
     }
 
     @ColumnInfo(name = "age")
-
     private int age;
+
     @ColumnInfo(name = "isPremium")
     private boolean isPremium;
 

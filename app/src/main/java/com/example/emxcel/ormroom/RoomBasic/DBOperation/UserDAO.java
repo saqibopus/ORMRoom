@@ -1,6 +1,7 @@
 package com.example.emxcel.ormroom.RoomBasic.DBOperation;
 
 import android.arch.persistence.room.Dao;
+import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.Query;
 import android.arch.persistence.room.Update;
@@ -18,13 +19,13 @@ public interface UserDAO {
 
     @Query("UPDATE user_info SET name = :new_user_name WHERE name = :old_user_name")
     int updateUserName(String  old_user_name,String new_user_name);
+    /**
+     * Following code will change all the records of name and age */
+    @Query("UPDATE user_info SET name = :new_user_name, age = :new_user_age WHERE id = :id")
+    int updateUserNameAge(String new_user_name,int new_user_age,long id);
 
-    @Query("UPDATE user_info SET name = :new_user_name, age = :new_user_age, isPremium = :new_user_isPremium WHERE id = :id")
-    int updateUser(long id,String new_user_name,int new_user_age,
-                   boolean new_user_isPremium);
-
-    @Query("UPDATE user_info SET name = :new_user_name WHERE id = :id")
-    int updateUserFull(long id,String new_user_name);
+    @Update
+    int updateUserFull(UserInfo userInfo);
 
     @Update
     void updateAll(UserInfo userInfo);
@@ -34,4 +35,10 @@ public interface UserDAO {
 
     @Query("SELECT * FROM user_info WHERE id = :id")
     UserInfo getUserById(long id);
+
+    @Delete
+    public int deleteUsers(UserInfo userInfo);
+
+    @Query("DELETE FROM user_info WHERE name = :user_name")
+    int deleteUserByName(String user_name);
 }
