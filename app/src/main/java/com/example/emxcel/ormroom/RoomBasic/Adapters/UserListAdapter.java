@@ -21,11 +21,15 @@ import java.util.List;
 public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHoler> implements Filterable {
     private Context context;
     private List<UserInfo> userList;
+    private List<UserInfo> userListFiltered;
     private LogHelper logHelper;
     private ContactsFilter mContactsFilter;
-    public UserListAdapter(Context context, List<UserInfo> userList) {
+    private UserAdapterListener userAdapterListener;
+    public UserListAdapter(Context context, List<UserInfo> userList,UserAdapterListener userAdapterListener) {
         this.context = context;
         this.userList = userList;
+        this.userListFiltered = userList;
+        this.userAdapterListener=userAdapterListener;
         Activity a = (Activity) context;
         logHelper = new LogHelper(a, true);
     }
@@ -41,7 +45,7 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
 
     @Override
     public void onBindViewHolder(ViewHoler holder, int position) {
-        UserInfo userInfo = userList.get(position);
+        UserInfo userInfo = userListFiltered.get(position);
         holder.tvUserId.setText(String.valueOf(userInfo.getId()));
         holder.tvUserName.setText(userInfo.getName());
         holder.tvUserAge.setText(String.valueOf(userInfo.getAge()));
@@ -50,7 +54,7 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
 
     @Override
     public int getItemCount() {
-        return userList.size();
+        return userListFiltered.size();
     }
 
     @Override
@@ -71,7 +75,20 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
             tvUserName = itemView.findViewById(R.id.tv_user_name);
             tvUserAge = itemView.findViewById(R.id.tv_user_age);
             tvUserPremium = itemView.findViewById(R.id.tv_user_premium);
-
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    // send selected contact in callback
+                    userAdapterListener.onUserSelected(userListFiltered.get(getAdapterPosition()));
+                }
+            });
+            itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    userAdapterListener.onUserDeleteSelected(userListFiltered.get(getAdapterPosition()));
+                    return false;
+                }
+            });
         }
     }
 
@@ -80,44 +97,50 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
         @Override
         protected FilterResults performFiltering(CharSequence constraint) {
             // Create a FilterResults object
-            FilterResults results = new FilterResults();
 
+            String charString = constraint.toString();
             // If the constraint (search string/pattern) is null
             // or its length is 0, i.e., its empty then
             // we just set the `values` property to the
             // original contacts list which contains all of them
-            if (constraint == null || constraint.length() == 0) {
-                results.values = userList;
-                results.count = userList.size();
+            if (charString.isEmpty()) {
+                /*results.values = userList;
+                results.count = userList.size();*/
+                userListFiltered = userList;
             } else {
                 // Some search copnstraint has been passed
                 // so let's filter accordingly
-                ArrayList<UserInfo> filteredContacts = new ArrayList<>();
+                ArrayList<UserInfo> filteredUsers = new ArrayList<>();
 
                 // We'll go through all the contacts and see
                 // if they contain the supplied string
                 for (UserInfo c : userList) {
-                    if (c.getName().contains(constraint.toString())) {
+                    if (c.getName().toLowerCase().contains(constraint.toString())) {
                         // if `contains` == true then add it
                         // to our filtered list
-                        filteredContacts.add(c);
+                        filteredUsers.add(c);
                     }
                 }
-
+                userListFiltered = filteredUsers;
                 // Finally set the filtered values and size/count
-                results.values = filteredContacts;
-                results.count = filteredContacts.size();
-                notifyDataSetChanged();
+
             }
+            FilterResults results = new FilterResults();
+            results.values = userListFiltered;
             // Return our FilterResults object
             return results;
         }
 
         @Override
         protected void publishResults(CharSequence constraint, FilterResults results) {
-            userList = (ArrayList<UserInfo>) results.values;
+            logHelper.p("count : "+results.count);
+            userListFiltered = (ArrayList<UserInfo>) results.values;
             notifyDataSetChanged();
         }
+    }
+    public interface UserAdapterListener {
+        void onUserSelected(UserInfo userInfo);
+        void onUserDeleteSelected(UserInfo userInfo);
     }
 }
 
