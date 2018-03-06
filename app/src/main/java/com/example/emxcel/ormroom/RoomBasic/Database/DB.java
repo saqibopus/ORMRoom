@@ -8,13 +8,23 @@ import com.example.emxcel.ormroom.RoomBasic.DBOperation.UserDAORX;
 import com.example.emxcel.ormroom.RoomBasic.Tables.UserInfo;
 
 /**
- * Created by emxcel on 4/12/17.
+ * Created by demo on 4/12/17.
  */
 
-@Database(entities = {UserInfo.class}, version = 1)
+@Database(entities = {UserInfo.class}, version = 2)
 public abstract class DB extends RoomDatabase {
     public static final String DB_NAME = "app_db";
 
     public abstract UserDAO getUserInfoDao();
     public abstract UserDAORX getUserInfoDaoRX();
+
+    @Override
+    public boolean isOpen() {
+        return super.isOpen();
+    }
+
+    @Override
+    public boolean inTransaction() {
+        return super.inTransaction();
+    }
 }

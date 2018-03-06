@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.arch.persistence.room.Room;
 import android.os.AsyncTask;
 
+import com.example.emxcel.ormroom.RoomBasic.AppHelper.LogHelper;
 import com.example.emxcel.ormroom.RoomBasic.AppHelper.ProgressHelper;
 import com.example.emxcel.ormroom.RoomBasic.Database.DB;
 import com.example.emxcel.ormroom.RoomBasic.Tables.UserInfo;
@@ -12,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by emxcel on 7/12/17.
+ * Created by demo on 7/12/17.
  */
 
 public class CRUDUser {
@@ -20,19 +21,24 @@ public class CRUDUser {
     private DB appDatabase;
     private Activity activity;
     private ProgressHelper progressHelper;
+    private LogHelper logHelper;
     public interface CRUDOperationListner {
         void onInsert(String message,long id);
         void onUpdateUser(String message,int id);
         void onGetAllUser(String message,List<UserInfo> userInfos);
+        void onSecondHighestUser(String message,List<UserInfo> value);
     }
     private CRUDOperationListner crudOperationListner;
     public CRUDUser(Activity activity,CRUDOperationListner crudOperationListner) {
         this.activity = activity;
         this.crudOperationListner=crudOperationListner;
-        appDatabase = Room.databaseBuilder(activity, DB.class, DB.DB_NAME)
-                .allowMainThreadQueries().build();
+        logHelper = new LogHelper(activity,true);
         progressHelper = ProgressHelper.getInstance();
         progressHelper.initProgressDilog(activity);
+        appDatabase = Room.databaseBuilder(activity, DB.class, DB.DB_NAME)
+                .allowMainThreadQueries().build();
+
+
     }
 
     public void insertUser(final UserInfo user){
@@ -65,6 +71,9 @@ public class CRUDUser {
             @Override
             protected Void doInBackground(Void... params) {
                 users = appDatabase.getUserInfoDao().getAllUser();
+                if(appDatabase.isOpen()){
+                    logHelper.p("Data base is open");
+                }
                 return null;
             }
 
@@ -180,6 +189,33 @@ public class CRUDUser {
                 super.onPostExecute(aVoid);
                 crudOperationListner.onUpdateUser("message",_id);
                 progressHelper.dissmiss();
+            }
+        }.execute();
+    }
+
+    public void getSecondHigest() {
+        new AsyncTask<Void, Void, Void>() {
+            List<UserInfo> users =new ArrayList<>();
+            @Override
+            protected Void doInBackground(Void... params) {
+                users = appDatabase.getUserInfoDao().getSecondHighest();
+                if(appDatabase.isOpen()){
+                    logHelper.p("Data base is open");
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                progressHelper.show("Getting User");
+            }
+
+            @Override
+            protected void onPostExecute(Void notes) {
+                crudOperationListner.onSecondHighestUser("User List Success",users);
+                progressHelper.dissmiss();
+
             }
         }.execute();
     }

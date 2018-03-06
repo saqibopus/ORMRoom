@@ -13,7 +13,7 @@ import io.reactivex.Flowable;
 import io.reactivex.Single;
 
 /**
- * Created by emxcel on 4/12/17.
+ * Created by demo on 4/12/17.
  */
 @Dao
 public interface UserDAORX {

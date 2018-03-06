@@ -14,6 +14,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -25,7 +26,6 @@ import android.widget.TextView;
 
 import com.example.emxcel.ormroom.RoomBasic.Adapters.UserListAdapter;
 import com.example.emxcel.ormroom.RoomBasic.AppHelper.LogHelper;
-import com.example.emxcel.ormroom.RoomBasic.AppHelper.RecyclerTouchListener;
 import com.example.emxcel.ormroom.RoomBasic.DBOperation.CRUDUser;
 import com.example.emxcel.ormroom.RoomBasic.Database.DB;
 import com.example.emxcel.ormroom.RoomBasic.Tables.UserInfo;
@@ -44,7 +44,8 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
-public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOperationListner {
+public class MainActivity extends AppCompatActivity implements
+        CRUDUser.CRUDOperationListner,UserListAdapter.UserAdapterListener{
     private DB appDatabase;
     private Button bt_get_users;
     private TextView tv_user_info;
@@ -75,38 +76,26 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
             }
         });
         crudUser.getUsers();
+        crudUser.getSecondHigest();
+
     }
 
     private void initUI() {
+
         fabAddUser = (FloatingActionButton) findViewById(R.id.fab_add_user);
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view_user_list);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(MainActivity.this);
         recyclerView.setLayoutManager(layoutManager);
-        recyclerView.addOnItemTouchListener(new RecyclerTouchListener(getApplicationContext(), recyclerView, new RecyclerTouchListener.ClickListener() {
-            @Override
-            public void onClick(View view, int position) {
-                UserInfo info = allUserData.get(position);
-                logHelper.p("id :" + info.getId());
-                updateDilog = alertWithCustomLayout(MainActivity.this, info);
-                updateDilog.show();
-            }
-
-            @Override
-            public void onLongClick(View view, int position) {
-                UserInfo info = allUserData.get(position);
-                simpleAlert(MainActivity.this,"Are you sure you want to delete?",info).show();
-            }
-        }));
     }
 
     private void initClass() {
         logHelper = new LogHelper(MainActivity.this, true);
         crudUser = new CRUDUser(MainActivity.this, this);
-        addDilog = alertWithCustomLayout(MainActivity.this, "User Info");
+        addDilog = addUserDilog(MainActivity.this, "User Info");
     }
 
     private void prepareListData() {
-        userListAdapter = new UserListAdapter(MainActivity.this, allUserData);
+        userListAdapter = new UserListAdapter(MainActivity.this, allUserData,this);
         recyclerView.setAdapter(userListAdapter);
     }
     @Override
@@ -121,15 +110,26 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                return true; // handled
+                logHelper.p("query :"+query);
+                if (TextUtils.isEmpty(query)){
+                    //Text is cleared, do your thing
+                }
+                userListAdapter.getFilter().filter(query);
+                return false; // handled
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-
                 userListAdapter.getFilter().filter(newText);
+                return false    ;
+            }
 
-                return true;
+        });
+        searchView.setOnCloseListener(new SearchView.OnCloseListener() {
+            @Override
+            public boolean onClose() {
+                userListAdapter.notifyDataSetChanged();
+                return false;
             }
         });
 
@@ -279,7 +279,7 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         });
     }
 
-    private AlertDialog alertWithCustomLayout(Activity activity, String title) {
+    private AlertDialog addUserDilog(Activity activity, String title) {
         final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         LayoutInflater inflater = activity.getLayoutInflater();
         View view = inflater.inflate(R.layout.layout_add_user, null);
@@ -287,9 +287,13 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         final EditText userName = (EditText) view.findViewById(R.id.etUserName);
         final EditText userAge = (EditText) view.findViewById(R.id.etUserAge);
         final CheckBox checkBox = (CheckBox) view.findViewById(R.id.checkboxPremium);
+        final EditText userSalary = (EditText) view.findViewById(R.id.etUserSalary);
         final Button btOk = (Button) view.findViewById(R.id.bt_ok);
         final Button btCancel = (Button) view.findViewById(R.id.bt_cancel);
-
+        userName.setText("");
+        userAge.setText("");
+        userSalary.setText("");
+        checkBox.setChecked(false);
         btOk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -301,10 +305,15 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
                     userAge.setError("Enter Age");
                     return;
                 }
+                if (userSalary.getText().toString().equals("")) {
+                    userSalary.setError("Enter Salary");
+                    return;
+                }
 
                 UserInfo user = new UserInfo();
                 user.setName(userName.getText().toString());
                 user.setAge(Integer.parseInt(userAge.getText().toString()));
+                user.setSalary(Integer.parseInt(userSalary.getText().toString()));
                 user.setPremium(checkBox.isChecked());
                 crudUser.insertUser(user);
                 if (addDilog != null && addDilog.isShowing()) {
@@ -331,17 +340,20 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
 
         final EditText userName = (EditText) view.findViewById(R.id.etUserName);
         final EditText userAge = (EditText) view.findViewById(R.id.etUserAge);
+        final EditText userSalary = (EditText) view.findViewById(R.id.etUserSalary);
         final CheckBox checkBox = (CheckBox) view.findViewById(R.id.checkboxPremium);
         final Button btOk = (Button) view.findViewById(R.id.bt_ok);
         final Button btCancel = (Button) view.findViewById(R.id.bt_cancel);
         userName.setText(userInfo.getName());
         userAge.setText(String.valueOf(userInfo.getAge()));
+        userSalary.setText(String.valueOf(userInfo.getSalary()));
         if (userInfo.isPremium()) {
             checkBox.setChecked(userInfo.isPremium());
         }
         logHelper.p("id : " + userInfo.getId());
         logHelper.p("name : " + userInfo.getName());
         logHelper.p("age : " + userInfo.getAge());
+        logHelper.p("salary : " + userInfo.getSalary());
         logHelper.p("premium : " + userInfo.isPremium());
 
 
@@ -358,10 +370,15 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
                     userAge.setError("Enter Age");
                     return;
                 }
+                if (userSalary.getText().toString().equals("")) {
+                    userSalary.setError("Enter salary");
+                    return;
+                }
                 UserInfo user = new UserInfo();
                 user.setId(userInfo.getId());
                 user.setName(userName.getText().toString());
                 user.setAge(Integer.parseInt(userAge.getText().toString()));
+                user.setSalary(Integer.parseInt(userSalary.getText().toString()));
                 user.setPremium(checkBox.isChecked());
 
                 /* Following code will update user by id */
@@ -387,7 +404,6 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         builder.setView(view);
         return builder.create();
     }
-
     @Override
     public void onInsert(String message, long id) {
         logHelper.p("----**onInsert(start)");
@@ -408,8 +424,6 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         }
         logHelper.p("----**onUpdateName(end)");
     }
-
-
     @Override
     public void onGetAllUser(String message, List<UserInfo> userInfos) {
         logHelper.p("----**onGetAllUser(start)");
@@ -417,6 +431,20 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         prepareListData();
         logHelper.p("----**onGetAllUser(end)");
     }
+
+    @Override
+    public void onSecondHighestUser(String message, List<UserInfo> value) {
+        logHelper.p("----**onSecondHighestUser(start)");
+        if(value !=null){
+            logHelper.p("Second Highest User size : "+value.size());
+            logHelper.p("----**User Id:"+value.get(0).getId());
+            logHelper.p("----**User name :"+value.get(0).getName());
+            logHelper.p("----**User salary :"+value.get(0).getSalary());
+        }
+        logHelper.p("----**onSecondHighestUser(end)");
+    }
+
+
 
 
     private AlertDialog simpleAlert(Activity activity, String message, final UserInfo userInfo) {
@@ -437,4 +465,18 @@ public class MainActivity extends AppCompatActivity implements CRUDUser.CRUDOper
         return builder.create();
     }
 
+
+    @Override
+    public void onUserSelected(UserInfo userInfo) {
+        UserInfo info = userInfo;
+        logHelper.p("id :" + info.getId());
+        updateDilog = alertWithCustomLayout(MainActivity.this, info);
+        updateDilog.show();
+    }
+
+    @Override
+    public void onUserDeleteSelected(UserInfo userInfo) {
+        UserInfo info = userInfo;
+        simpleAlert(MainActivity.this,"Are you sure you want to delete?",info).show();
+    }
 }

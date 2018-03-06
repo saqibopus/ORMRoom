@@ -27,11 +27,11 @@ public interface UserDAO {
     @Update
     int updateUserFull(UserInfo userInfo);
 
-    @Update
-    void updateAll(UserInfo userInfo);
-
     @Query("SELECT * FROM user_info")
     List<UserInfo> getAllUser();
+
+    @Query("SELECT id,name,age,isPremium,salary, MAX(salary) AS salary FROM user_info WHERE salary<(SELECT MAX(salary) FROM user_info) ")
+    List<UserInfo> getSecondHighest();
 
     @Query("SELECT * FROM user_info WHERE id = :id")
     UserInfo getUserById(long id);

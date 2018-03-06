@@ -39,7 +39,6 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.adapter_user_list, parent, false);
 
-
         return new ViewHoler(itemView);
     }
 
@@ -49,6 +48,7 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
         holder.tvUserId.setText(String.valueOf(userInfo.getId()));
         holder.tvUserName.setText(userInfo.getName());
         holder.tvUserAge.setText(String.valueOf(userInfo.getAge()));
+        holder.tvUserSalary.setText(String.valueOf(userInfo.getSalary()));
         holder.tvUserPremium.setText(String.valueOf(userInfo.isPremium()));
     }
 
@@ -66,7 +66,7 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
 
 
     public class ViewHoler extends RecyclerView.ViewHolder {
-        public TextView tvUserId, tvUserName, tvUserAge, tvUserPremium;
+        public TextView tvUserId, tvUserName, tvUserAge, tvUserPremium,tvUserSalary;
 
 
         public ViewHoler(View itemView) {
@@ -74,6 +74,7 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
             tvUserId = itemView.findViewById(R.id.tv_user_id);
             tvUserName = itemView.findViewById(R.id.tv_user_name);
             tvUserAge = itemView.findViewById(R.id.tv_user_age);
+            tvUserSalary = itemView.findViewById(R.id.tv_user_salary);
             tvUserPremium = itemView.findViewById(R.id.tv_user_premium);
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override

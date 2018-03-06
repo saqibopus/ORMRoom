@@ -5,7 +5,7 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 
 /**
- * Created by emxcel on 4/12/17.
+ * Created by demo on 4/12/17.
  */
 @Entity(tableName = "user_info")
 public class UserInfo {
@@ -53,6 +53,17 @@ public class UserInfo {
 
     @ColumnInfo(name = "isPremium")
     private boolean isPremium;
+
+    public int getSalary() {
+        return salary;
+    }
+
+    public void setSalary(int salary) {
+        this.salary = salary;
+    }
+
+    @ColumnInfo(name = "salary")
+    private int salary;
 
 
 }
