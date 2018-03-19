@@ -3,7 +3,7 @@ Following web services required
 0.Garden waste request form
 1.Product Listing Page
 2.Product Fullview Page
-2.About Us page
+3.About Us page
 ===============================
 0.Garden waste request form
 -------------------------------
@@ -28,31 +28,22 @@ So you need to create multipart data request
         {
          "id": "1   ",
          "name": "Dustbin Set",
-         "description":"here we will include short description about product"
+         "description":"here we will include full description about product in HTMl format"
         },
         {
          "id": "2",
          "name": "Dustbin Liners",
-         "description":"here we will include short description about product"
+         "description":"here we will include full description about product in HTMl format"
         },
         {
           "id": "3",
           "name": "Kitchen Waste Composting Kit",
-          "description":"here we will include short description about product"
+          "description":"here we will include full description about product in HTMl format"
         }
 ]
 }
-------------------------
-2.Product Fullview Page
-------------------------
-{
-"status":"success",
-"message":"Some message goes here."
-"detail" :{
-         "id": "1",
-         "name": "Dustbin Set",
-         "description":"here we will include full description
-                        about product in HTMl format"
-        }
-]
-}
+
+-------------------------------
+3.About Us page
+-------------------------------
+to be continue...
