@@ -1,9 +1,24 @@
 Following web services required
 ===============================
+0.Garden waste request form
 1.Product Listing Page
 2.Product Fullview Page
 2.About Us page
 ===============================
+0.Garden waste request form
+-------------------------------
+Here you need to create one post service.
+i will send you following parameter in post with image.
+So you need to create multipart data request
+-> Name
+-> Society/Apartment
+-> Area
+-> Near location
+-> Famous Landmark
+-> Pincode
+-> Latitude-Longitude(Optional)
+-> Image Optional
+-------------------------------
 1.Product Listing Page
 -------------------------------
 {
