@@ -1,0 +1,43 @@
+Following web services required
+===============================
+1.Product Listing Page
+2.Product Fullview Page
+2.About Us page
+===============================
+1.Product Listing Page
+-------------------------------
+{
+"status":"success",
+"message":"Some message goes here.",
+"productList":[
+        {
+         "id": "1   ",
+         "name": "Dustbin Set",
+         "description":"here we will include short description about product"
+        },
+        {
+         "id": "2",
+         "name": "Dustbin Liners",
+         "description":"here we will include short description about product"
+        },
+        {
+          "id": "3",
+          "name": "Kitchen Waste Composting Kit",
+          "description":"here we will include short description about product"
+        }
+]
+}
+------------------------
+2.Product Fullview Page
+------------------------
+{
+"status":"success",
+"message":"Some message goes here."
+"detail" :{
+         "id": "1",
+         "name": "Dustbin Set",
+         "description":"here we will include full description
+                        about product in HTMl format"
+        }
+]
+}
